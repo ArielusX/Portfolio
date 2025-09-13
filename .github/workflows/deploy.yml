@@ -20,7 +20,9 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           echo "🔄 Starting deployment..."
-          cd ${{ secrets.DEPLOY_PATH || '/var/www/html/Portfolio' }}
+          cd /var/www/html/Portfolio  # ¡Ruta corregida!
           git pull origin main
           echo "✅ Deployment completed successfully!"
+          echo "📂 Files in directory:"
+          ls -la
           echo "🌐 Site should be live at: https://lucaslugo.com"
