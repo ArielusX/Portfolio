@@ -12,17 +12,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup SSH and deploy
+    - name: Deploy with correct permissions
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          echo "🔄 Starting deployment..."
-          cd /var/www/html/Portfolio  # ¡Ruta corregida!
+          echo "🔧 Fixing permissions..."
+          sudo chown -R $USER:$USER /var/www/html/Portfolio
+          
+          echo "🚀 Deploying..."
+          cd /var/www/html/Portfolio
           git pull origin main
-          echo "✅ Deployment completed successfully!"
-          echo "📂 Files in directory:"
+          
+          echo "✅ Deployment completed!"
+          echo "📋 Latest files:"
           ls -la
-          echo "🌐 Site should be live at: https://lucaslugo.com"
+          echo "🌐 Live at: https://lucaslugo.com"
