@@ -12,33 +12,28 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy with detailed debugging
+    - name: Force update deployment
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          echo "🔍 Debug information:"
-          echo "User: $(whoami)"
-          echo "Working dir: $(pwd)"
-          
-          echo "🔧 Ensuring correct permissions..."
-          sudo chown -R $USER:$USER /var/www/html/Portfolio
-          sudo chmod -R 755 /var/www/html/Portfolio
-          
-          echo "📁 Before deployment:"
+          echo "🚀 Forcing deployment update..."
           cd /var/www/html/Portfolio
-          ls -la
-          git remote -v
+          
+          echo "📋 Current status:"
           git status --short
-          
-          echo "🔄 Pulling changes..."
-          git pull origin main
-          
-          echo "✅ After deployment:"
           git log -1 --oneline
-          ls -la
           
-          echo "🌐 Testing website..."
-          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://lucaslugo.com || echo "Web test completed"
+          echo "🔄 Force updating..."
+          git fetch --all
+          git reset --hard origin/main
+          
+          echo "✅ Deployment completed!"
+          echo "📋 New status:"
+          git status --short
+          git log -1 --oneline
+          echo "📂 Files deployed:"
+          ls -la
+          echo "🌐 Live at: https://lucaslugo.com"
