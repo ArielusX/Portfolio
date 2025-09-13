@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Deploy via RSync
 
 on:
   push:
@@ -12,21 +12,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Deploy with correct permissions
+    - name: Setup SSH known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy with RSync
+      run: |
+        rsync -avz -e "ssh -i ${{ secrets.SSH_KEY }}" \
+          --delete \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules' \
+          ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/var/www/html/Portfolio/
+
+    - name: Verify deployment
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          echo "🔧 Fixing permissions..."
-          sudo chown -R $USER:$USER /var/www/html/Portfolio
-          
-          echo "🚀 Deploying..."
-          cd /var/www/html/Portfolio
-          git pull origin main
-          
-          echo "✅ Deployment completed!"
-          echo "📋 Latest files:"
-          ls -la
-          echo "🌐 Live at: https://lucaslugo.com"
+          echo "✅ RSync deployment completed!"
+          echo "📂 Files in /var/www/html/Portfolio:"
+          ls -la /var/www/html/Portfolio/
+          echo "🌐 Website status:"
+          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://lucaslugo.com
