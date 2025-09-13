@@ -1,4 +1,4 @@
-name: Deploy via RSync
+name: Deploy via SSH
 
 on:
   push:
@@ -12,29 +12,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup SSH known hosts
+    - name: Prepare SSH
       run: |
-        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_KEY }}" > private_key
+        chmod 600 private_key
         ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Deploy with RSync
+    - name: Copy files via SCP
       run: |
-        rsync -avz -e "ssh -i ${{ secrets.SSH_KEY }}" \
-          --delete \
-          --exclude='.git' \
-          --exclude='.github' \
-          --exclude='node_modules' \
-          ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/var/www/html/Portfolio/
+        scp -i private_key \
+            -o StrictHostKeyChecking=no \
+            -r ./* \
+            ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/var/www/html/Portfolio/
 
     - name: Verify deployment
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          echo "✅ RSync deployment completed!"
-          echo "📂 Files in /var/www/html/Portfolio:"
-          ls -la /var/www/html/Portfolio/
-          echo "🌐 Website status:"
-          curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://lucaslugo.com
+      run: |
+        ssh -i private_key \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
+            "ls -la /var/www/html/Portfolio/ && echo '✅ Deployment successful!'"
